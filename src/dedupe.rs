@@ -41,7 +41,7 @@ fn parent(p: &mut [usize], mut x: usize) -> usize {
 /// keeps the work far below all-pairs on large lists. A pair whose names differ in the
 /// first three letters of both its first and its last word, and whose spacing-free names
 /// differ at the start, is not found.
-fn blocks(c: &Company) -> Vec<String> {
+pub(crate) fn blocks(c: &Company) -> Vec<String> {
     let loose = c.loose_key();
     let squeezed: String = loose.replace(' ', "");
     let mut out = vec![format!(
