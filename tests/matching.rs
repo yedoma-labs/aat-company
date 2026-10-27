@@ -35,6 +35,24 @@ fn legal_forms_across_countries() {
 }
 
 #[test]
+fn prefix_forms_match_their_suffix_spelling() {
+    let m = compare("ООО Ромашка", "Ромашка ООО");
+    assert_eq!(m.verdict, Verdict::Identical);
+    assert_eq!(m.forms, FormRelation::Same);
+    assert_eq!(
+        compare("PT Astra International", "Astra International PT").verdict,
+        Verdict::Identical
+    );
+}
+
+#[test]
+fn prefix_forms_conflict_like_suffix_forms() {
+    let m = compare("ООО Ромашка", "ЗАО Ромашка");
+    assert_eq!(m.forms, FormRelation::Conflict);
+    assert!(m.verdict < Verdict::Likely);
+}
+
+#[test]
 fn conflict_never_merges() {
     let m = compare("Acme GmbH", "Acme AG");
     assert_eq!(m.forms, FormRelation::Conflict);

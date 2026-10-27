@@ -1,4 +1,4 @@
-//! Legal forms (GmbH, AG, Ltd, B.V., S.A., ...): 90 forms in more than 50 countries across Europe, the Americas and Asia.
+//! Legal forms (GmbH, AG, Ltd, B.V., S.A., ...): 91 forms in more than 50 countries across Europe, the Americas and Asia.
 //!
 //! A legal form is not part of a company's name but says *which legal entity* it is:
 //! `Siemens AG` and `Siemens GmbH` are different companies.
@@ -397,10 +397,24 @@ const TABLE: &[Row] = &[
     ("W.L.L.", "BH,QA,KW", Class::Limited, &["W.L.L.", "WLL"]),
     ("FZE", "AE", Class::Limited, &["FZE"]),
     ("PJSC", "AE,RU,UA,KZ", Class::Corporation, &["PJSC"]),
+    ("PT", "ID", Class::Limited, &["PT", "P.T."]),
 ];
 
 /// The longest legal form has this many tokens (`S.A. de C.V.`).
 pub(crate) const MAX_FORM_TOKENS: usize = 6;
+
+/// Canonical forms that are written in front of the name (`OOO Ромашка`, `PT Astra
+/// International`). Only these are read at the start of a name: a leading `AB` or `AG`
+/// is usually part of the name (`AB InBev`).
+const PREFIX_FORMS: &[&str] = &["OOO", "AO", "PAO", "ZAO", "PT"];
+
+/// The prefix form that opens `tokens` (the longest spelling wins), if one of
+/// [`PREFIX_FORMS`] does and at least one word of the name follows it.
+pub(crate) fn lookup_prefix(tokens: &[String]) -> Option<LegalForm> {
+    (1..=MAX_FORM_TOKENS.min(tokens.len().saturating_sub(1)))
+        .rev()
+        .find_map(|k| lookup(&tokens[..k]).filter(|f| PREFIX_FORMS.contains(&f.canonical)))
+}
 
 fn index() -> &'static HashMap<String, LegalForm> {
     static INDEX: OnceLock<HashMap<String, LegalForm>> = OnceLock::new();
@@ -549,6 +563,27 @@ mod tests {
                 .map(|f| f.canonical),
             Some("GmbH & Co. OHG")
         );
+    }
+
+    #[test]
+    fn prefix_forms_are_read_only_at_the_start() {
+        let prefix = |text: &str| lookup_prefix(&raw_tokens(text)).map(|f| f.canonical);
+        assert_eq!(prefix("ООО Ромашка"), Some("OOO"));
+        assert_eq!(prefix("ЗАО «Ромашка»"), Some("ZAO"));
+        assert_eq!(prefix("PT Astra International"), Some("PT"));
+        assert_eq!(prefix("P.T. Astra"), Some("PT"));
+        assert_eq!(prefix("AB InBev"), None);
+        assert_eq!(prefix("Ltd Acme"), None);
+        assert_eq!(prefix("OOO"), None);
+        // a prefix form only in the middle does not count
+        assert_eq!(prefix("Acme OOO Ромашка"), None);
+    }
+
+    #[test]
+    fn indonesian_pt_is_a_form() {
+        let pt = form("PT").unwrap();
+        assert_eq!(pt.canonical, "PT");
+        assert!(pt.is_used_in("ID"));
     }
 
     #[test]

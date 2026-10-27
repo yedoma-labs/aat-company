@@ -41,7 +41,7 @@ println!("{}", m.reasons.join("; "));
 
 | | |
 |---|---|
-| **Legal-form aware** | 90 legal forms from more than 50 countries (GmbH, UG, AG, KG, GmbH & Co. KG, e.K., eG, e.V., Ltd, LLC, Inc, PLC, B.V., N.V., SARL, SAS, S.L., S.r.l., S.p.A., AB, A/S, Oy, Sp. z o.o., s.r.o., OOO, K.K., ...), every spelling (`G.m.b.H.`, `GesmbH`, `Gesellschaft mit beschränkter Haftung`) mapped to one canonical form. The longest spelling wins, so `GmbH & Co. KG` is not read as `KG`. |
+| **Legal-form aware** | 91 legal forms from more than 50 countries (GmbH, UG, AG, KG, GmbH & Co. KG, e.K., eG, e.V., Ltd, LLC, Inc, PLC, B.V., N.V., SARL, SAS, S.L., S.r.l., S.p.A., AB, A/S, Oy, Sp. z o.o., s.r.o., OOO, PT, K.K., ...), every spelling (`G.m.b.H.`, `GesmbH`, `Gesellschaft mit beschränkter Haftung`) mapped to one canonical form. The longest spelling wins, so `GmbH & Co. KG` is not read as `KG`. Prefix forms (`OOO Ромашка`, `PT Astra`) are read at the start of a name. |
 | **Conflict is evidence** | Two different legal forms never merge, in `compare` or in `dedupe`. A missing form does not contradict. |
 | **Numbers and short names are guarded** | `Hotel Adler 1` vs `2` is capped below a match; names under four letters are not fuzzy-matched (`ABC` is not `ABD`). |
 | **German-first folding** | `ä ö ü ß` become `ae oe ue ss` (`Müller` = `Mueller`), `&`/`und`/`u.`/`and`/`et` are connectors, `A.P. Møller` and `AP Moller` meet. Other Latin diacritics and Cyrillic forms work too. |
@@ -90,7 +90,7 @@ printf 'Siemens AG\nSIEMENS Aktiengesellschaft\nApple Inc\n' | cargo run --examp
 ## Limitations
 
 - **Names only.** It does not know that two names with nothing in common belong to one group (`Google LLC` / `Alphabet Inc`). Use registry identifiers (LEI, Handelsregister number, VAT ID) where you have them; this crate is for when you don't.
-- **Legal form at the end.** Prefix forms (`AB Volvo`, `PT Astra`) are not split off; the prefix stays in the name.
+- **Legal form at the end, or a fixed set of prefixes.** Only `OOO`, `AO`, `PAO`, `ZAO` and `PT` are read at the start of a name. Other prefix forms (`AB Volvo`) stay in the name; `AB` is not split off because `AB InBev` is a name.
 - **Latin and Cyrillic scripts.** Other scripts are compared as written, without transliteration.
 - **Transitive clusters.** `dedupe` merges A~B and B~C into one cluster. Use `Verdict::Same` or higher to avoid chains of near-matches.
 - **Blocking.** `dedupe` compares names that share the start of their words, their initials or their first letters without spaces. A pair that differs in all of these (typo in the first letters of every word) is not found; `compare` still scores it if you ask.

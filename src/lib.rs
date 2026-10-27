@@ -18,8 +18,9 @@
 //! println!("{}", m.reasons.join("; "));
 //! ```
 //!
-//! - [`Company::parse`] splits a name into core words and [`LegalForm`] (90 forms
-//!   in more than 40 countries, all spellings mapped to one canonical form)
+//! - [`Company::parse`] splits a name into core words and [`LegalForm`] (91 forms
+//!   in more than 40 countries, all spellings mapped to one canonical form; a few, such as
+//!   `OOO` and `PT`, are read at the start of a name)
 //! - [`compare`] scores two names and returns a [`Verdict`] with reasons
 //! - [`dedupe()`](fn@dedupe) groups a list of names, with the evidence for every merge
 //!

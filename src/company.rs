@@ -1,7 +1,9 @@
 //! Parsing a company name into core and legal form.
 
+use std::ops::Range;
+
 use crate::fold::{core_tokens, raw_tokens};
-use crate::forms::{lookup, LegalForm, MAX_FORM_TOKENS};
+use crate::forms::{lookup, lookup_prefix, LegalForm, MAX_FORM_TOKENS};
 
 /// Descriptive words that do not identify a company (`Group`, `Holding`, `Deutschland`, ...).
 /// They are ignored by [`Company::loose_key`].
@@ -57,24 +59,33 @@ pub struct Company {
     pub tokens: Vec<String>,
 }
 
+/// Finds the legal form of a name and the range of tokens that make up the name.
+///
+/// A trailing form is split off first (the longest spelling wins, so `GmbH & Co. KG` is
+/// not read as `KG`); a leading prefix form (`OOO`, `PT`, ...) only if there is none.
+/// A form is never split off if that would leave nothing of the name.
+fn split_form(raw: &[String]) -> (Option<LegalForm>, Range<usize>) {
+    for k in (1..=MAX_FORM_TOKENS.min(raw.len().saturating_sub(1))).rev() {
+        if let Some(f) = lookup(&raw[raw.len() - k..]) {
+            return (Some(f), 0..raw.len() - k);
+        }
+    }
+    match lookup_prefix(raw) {
+        Some(f) => (Some(f), 1..raw.len()),
+        None => (None, 0..raw.len()),
+    }
+}
+
 impl Company {
-    /// Parses `name`. A trailing legal form is split off (the longest spelling wins, so
-    /// `GmbH & Co. KG` is not read as `KG`) unless that would leave nothing of the name.
+    /// Parses `name`. A legal form is split off at the end or, for forms such as `OOO`
+    /// and `PT`, at the start.
     pub fn parse(name: &str) -> Self {
         let raw = raw_tokens(name);
-        let mut form = None;
-        let mut cut = raw.len();
-        for k in (1..=MAX_FORM_TOKENS.min(raw.len().saturating_sub(1))).rev() {
-            if let Some(f) = lookup(&raw[raw.len() - k..]) {
-                form = Some(f);
-                cut = raw.len() - k;
-                break;
-            }
-        }
+        let (form, range) = split_form(&raw);
         Self {
             original: name.to_string(),
             form,
-            tokens: core_tokens(&raw[..cut]),
+            tokens: core_tokens(&raw[range]),
         }
     }
 
@@ -100,11 +111,19 @@ impl Company {
         }
     }
 
-    /// The name tidied for display: core words as written, canonical legal form appended.
+    /// The name tidied for display: core words as written, canonical legal form appended
+    /// (or put in front, for a prefix form such as `OOO`).
     pub fn display(&self) -> String {
         match (&self.form, self.original.trim()) {
             (None, o) => o.to_string(),
-            (Some(f), _) => format!("{} {}", self.key(), f.canonical),
+            (Some(f), o) => {
+                let (_, range) = split_form(&raw_tokens(o));
+                if range.start > 0 {
+                    format!("{} {}", f.canonical, self.key())
+                } else {
+                    format!("{} {}", self.key(), f.canonical)
+                }
+            }
         }
     }
 
@@ -157,5 +176,45 @@ mod tests {
     #[test]
     fn empty_input() {
         assert!(Company::parse(" - ").is_empty());
+    }
+
+    #[test]
+    fn prefix_forms_are_split_off_the_start() {
+        let c = Company::parse("ООО «Ромашка»");
+        assert_eq!(c.form.map(|f| f.canonical), Some("OOO"));
+        assert_eq!(c.key(), "ромашка");
+        assert_eq!(c.display(), "OOO ромашка");
+
+        let c = Company::parse("PT Astra International Tbk");
+        assert_eq!(c.form.map(|f| f.canonical), Some("PT"));
+        assert_eq!(c.key(), "astra international tbk");
+        assert_eq!(c.display(), "PT astra international tbk");
+    }
+
+    #[test]
+    fn leading_words_that_are_not_prefix_forms_stay_in_the_name() {
+        // AB is a legal form in Sweden but "AB InBev" is a name
+        let c = Company::parse("AB InBev");
+        assert!(c.form.is_none());
+        assert_eq!(c.key(), "ab inbev");
+        // a prefix form alone is a name, not a form
+        let c = Company::parse("OOO");
+        assert!(c.form.is_none());
+        assert_eq!(c.key(), "ooo");
+    }
+
+    #[test]
+    fn a_trailing_form_wins_over_a_leading_one() {
+        let c = Company::parse("OOO Acme GmbH");
+        assert_eq!(c.form.map(|f| f.canonical), Some("GmbH"));
+        assert_eq!(c.key(), "ooo acme");
+        assert_eq!(c.display(), "ooo acme GmbH");
+    }
+
+    #[test]
+    fn a_trailing_prefix_spelling_stays_at_the_end() {
+        let c = Company::parse("Acme OOO");
+        assert_eq!(c.form.map(|f| f.canonical), Some("OOO"));
+        assert_eq!(c.display(), "acme OOO");
     }
 }
