@@ -1,4 +1,4 @@
-//! Legal forms (GmbH, AG, Ltd, B.V., S.A., ...): 64 forms in more than 40 countries across Europe, the Americas and Asia.
+//! Legal forms (GmbH, AG, Ltd, B.V., S.A., ...): 90 forms in more than 50 countries across Europe, the Americas and Asia.
 //!
 //! A legal form is not part of a company's name but says *which legal entity* it is:
 //! `Siemens AG` and `Siemens GmbH` are different companies.
@@ -310,6 +310,93 @@ const TABLE: &[Row] = &[
     ("AO", "RU", Class::Corporation, &["AO", "АО"]),
     ("PAO", "RU", Class::Corporation, &["PAO", "ПАО"]),
     ("ZAO", "RU", Class::Corporation, &["ZAO", "ЗАО"]),
+    // ---- added in 0.2: Central and Eastern Europe, Baltics, Iceland, more German hybrids ----
+    (
+        "Kft.",
+        "HU",
+        Class::Limited,
+        &["Kft.", "Korlátolt Felelősségű Társaság"],
+    ),
+    (
+        "Zrt.",
+        "HU",
+        Class::Corporation,
+        &["Zrt.", "Zártkörűen Működő Részvénytársaság"],
+    ),
+    (
+        "Nyrt.",
+        "HU",
+        Class::Corporation,
+        &["Nyrt.", "Nyilvánosan Működő Részvénytársaság"],
+    ),
+    (
+        "d.o.o.",
+        "HR,SI,RS,BA,ME,MK",
+        Class::Limited,
+        &["d.o.o.", "D.O.O.", "doo"],
+    ),
+    ("d.d.", "HR,SI,BA", Class::Corporation, &["d.d."]),
+    ("EOOD", "BG", Class::Limited, &["EOOD"]),
+    ("OOD", "BG", Class::Limited, &["OOD"]),
+    ("UAB", "LT", Class::Limited, &["UAB"]),
+    ("SIA", "LV", Class::Limited, &["SIA"]),
+    ("OÜ", "EE", Class::Limited, &["OÜ"]),
+    ("ehf.", "IS", Class::Limited, &["ehf."]),
+    (
+        "Sp. k.",
+        "PL",
+        Class::Partnership,
+        &["Sp. k.", "spółka komandytowa"],
+    ),
+    (
+        "Sp. j.",
+        "PL",
+        Class::Partnership,
+        &["Sp. j.", "spółka jawna"],
+    ),
+    ("S.A.U.", "ES", Class::Corporation, &["S.A.U.", "SAU"]),
+    (
+        "S.Coop.",
+        "ES",
+        Class::Cooperative,
+        &["S.Coop.", "S. Coop."],
+    ),
+    ("VZW", "BE", Class::Association, &["VZW", "v.z.w."]),
+    (
+        "SE & Co. KG",
+        "DE",
+        Class::Partnership,
+        &["SE & Co. KG", "SE & Co KG", "SE u. Co. KG"],
+    ),
+    (
+        "GmbH & Co. OHG",
+        "DE,AT",
+        Class::Partnership,
+        &["GmbH & Co. OHG", "GmbH u. Co. OHG"],
+    ),
+    (
+        "GmbH & Co. KGaA",
+        "DE",
+        Class::Partnership,
+        &["GmbH & Co. KGaA"],
+    ),
+    ("mbH", "DE", Class::Limited, &["mbH", "m.b.H."]),
+    (
+        "gUG",
+        "DE",
+        Class::Limited,
+        &["gUG", "gUG (haftungsbeschränkt)"],
+    ),
+    (
+        "VVaG",
+        "DE",
+        Class::Other,
+        &["VVaG", "Versicherungsverein auf Gegenseitigkeit"],
+    ),
+    ("G.K.", "JP", Class::Limited, &["G.K.", "Godo Kaisha"]),
+    ("W.L.L.", "BH,QA,KW", Class::Limited, &["W.L.L.", "WLL"]),
+    ("FZE", "AE", Class::Limited, &["FZE"]),
+    ("PJSC", "AE,RU,UA,KZ", Class::Corporation, &["PJSC"]),
 ];
 
 /// The longest legal form has this many tokens (`S.A. de C.V.`).
@@ -419,5 +506,60 @@ mod tests {
         assert!(TABLE
             .iter()
             .all(|r| r.3.iter().all(|v| raw_tokens(v).len() <= MAX_FORM_TOKENS)));
+    }
+
+    #[test]
+    fn central_european_and_hybrid_forms_are_recognised() {
+        for (text, canonical) in [
+            ("Kft.", "Kft."),
+            ("Zártkörűen Működő Részvénytársaság", "Zrt."),
+            ("D.O.O.", "d.o.o."),
+            ("d.d.", "d.d."),
+            ("UAB", "UAB"),
+            ("SIA", "SIA"),
+            ("OÜ", "OÜ"),
+            ("ehf.", "ehf."),
+            ("Sp. k.", "Sp. k."),
+            ("S.Coop.", "S.Coop."),
+            ("SE & Co. KG", "SE & Co. KG"),
+            ("SE u. Co. KG", "SE & Co. KG"),
+            ("GmbH & Co. OHG", "GmbH & Co. OHG"),
+            ("GmbH & Co. KGaA", "GmbH & Co. KGaA"),
+            ("m.b.H.", "mbH"),
+            ("gUG (haftungsbeschränkt)", "gUG"),
+            ("Godo Kaisha", "G.K."),
+            ("W.L.L.", "W.L.L."),
+        ] {
+            assert_eq!(form(text).map(|f| f.canonical), Some(canonical), "{text}");
+        }
+    }
+
+    #[test]
+    fn the_longest_hybrid_wins_over_its_tail() {
+        use crate::Company;
+        assert_eq!(
+            Company::parse("Beispiel SE & Co. KG")
+                .form
+                .map(|f| f.canonical),
+            Some("SE & Co. KG")
+        );
+        assert_eq!(
+            Company::parse("Beispiel GmbH & Co. OHG")
+                .form
+                .map(|f| f.canonical),
+            Some("GmbH & Co. OHG")
+        );
+    }
+
+    #[test]
+    fn every_canonical_spelling_parses_to_itself() {
+        for f in all() {
+            assert_eq!(
+                form(f.canonical).map(|x| x.canonical),
+                Some(f.canonical),
+                "{}",
+                f.canonical
+            );
+        }
     }
 }

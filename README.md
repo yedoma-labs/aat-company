@@ -41,7 +41,7 @@ println!("{}", m.reasons.join("; "));
 
 | | |
 |---|---|
-| **Legal-form aware** | 64 legal forms from more than 40 countries (GmbH, UG, AG, KG, GmbH & Co. KG, e.K., eG, e.V., Ltd, LLC, Inc, PLC, B.V., N.V., SARL, SAS, S.L., S.r.l., S.p.A., AB, A/S, Oy, Sp. z o.o., s.r.o., OOO, K.K., ...), every spelling (`G.m.b.H.`, `GesmbH`, `Gesellschaft mit beschränkter Haftung`) mapped to one canonical form. The longest spelling wins, so `GmbH & Co. KG` is not read as `KG`. |
+| **Legal-form aware** | 90 legal forms from more than 50 countries (GmbH, UG, AG, KG, GmbH & Co. KG, e.K., eG, e.V., Ltd, LLC, Inc, PLC, B.V., N.V., SARL, SAS, S.L., S.r.l., S.p.A., AB, A/S, Oy, Sp. z o.o., s.r.o., OOO, K.K., ...), every spelling (`G.m.b.H.`, `GesmbH`, `Gesellschaft mit beschränkter Haftung`) mapped to one canonical form. The longest spelling wins, so `GmbH & Co. KG` is not read as `KG`. |
 | **Conflict is evidence** | Two different legal forms never merge, in `compare` or in `dedupe`. A missing form does not contradict. |
 | **Numbers and short names are guarded** | `Hotel Adler 1` vs `2` is capped below a match; names under four letters are not fuzzy-matched (`ABC` is not `ABD`). |
 | **German-first folding** | `ä ö ü ß` become `ae oe ue ss` (`Müller` = `Mueller`), `&`/`und`/`u.`/`and`/`et` are connectors, `A.P. Møller` and `AP Moller` meet. Other Latin diacritics and Cyrillic forms work too. |
@@ -70,6 +70,16 @@ let names = ["Siemens AG", "SIEMENS Aktiengesellschaft", "Siemens GmbH", "Apple 
 for cluster in dedupe(&names, Verdict::Same) {
     println!("keep {:?}, duplicates {:?}", names[cluster.canonical], cluster.members);
 }
+```
+
+Looking up one name in a known list, for example before creating a customer record:
+
+```rust
+use aat::{Index, Verdict};
+
+let crm = Index::new(&["Müller & Söhne GmbH", "Siemens AG", "Siemens Energy AG"]);
+let hit = crm.best("MUELLER und SOEHNE G.m.b.H.", Verdict::Likely).unwrap();
+assert_eq!(hit.name, "Müller & Söhne GmbH");
 ```
 
 ```bash

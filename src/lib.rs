@@ -18,7 +18,7 @@
 //! println!("{}", m.reasons.join("; "));
 //! ```
 //!
-//! - [`Company::parse`] splits a name into core words and [`LegalForm`] (64 forms
+//! - [`Company::parse`] splits a name into core words and [`LegalForm`] (90 forms
 //!   in more than 40 countries, all spellings mapped to one canonical form)
 //! - [`compare`] scores two names and returns a [`Verdict`] with reasons
 //! - [`dedupe()`](fn@dedupe) groups a list of names, with the evidence for every merge
@@ -32,9 +32,11 @@ pub mod company;
 pub mod dedupe;
 mod fold;
 pub mod forms;
+pub mod index;
 pub mod similarity;
 
 pub use company::Company;
 pub use dedupe::{dedupe, Cluster, Link};
 pub use forms::{Class, LegalForm};
+pub use index::{Hit, Index};
 pub use similarity::{compare, compare_parsed, jaro_winkler, Config, FormRelation, Match, Verdict};
