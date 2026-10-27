@@ -1,0 +1,33 @@
+[package]
+name = "aat-company"
+version = "0.1.0"
+edition = "2021"
+authors = ["yedoma-labs"]
+description = "Company name normalization and matching - legal-form aware (GmbH, AG, Ltd, B.V., S.A., ...), explainable, dependency-free"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/yedoma-labs/aat-company"
+homepage = "https://github.com/yedoma-labs/aat-company"
+documentation = "https://docs.rs/aat-company"
+readme = "README.md"
+keywords = ["company", "entity-resolution", "dedupe", "normalization", "kyc"]
+categories = ["text-processing", "algorithms"]
+exclude = [
+    ".github/*",
+    ".githooks/*",
+    "release-plz.toml",
+    "target/*",
+]
+
+[dependencies]
+
+[lib]
+name = "aat"
+path = "src/lib.rs"
+
+[[example]]
+name = "compare"
+path = "examples/compare.rs"
+
+[[example]]
+name = "dedupe"
+path = "examples/dedupe.rs"
