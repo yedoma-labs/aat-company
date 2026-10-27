@@ -1,6 +1,6 @@
 [package]
 name = "aat-company"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["yedoma-labs"]
 description = "Company name normalization and matching - legal-form aware (GmbH, AG, Ltd, B.V., S.A., ...), explainable, dependency-free"
