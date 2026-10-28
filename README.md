@@ -17,8 +17,6 @@
 [![Dependencies](https://img.shields.io/badge/dependencies-0-success)](Cargo.toml)
 [![Conventional Commits](https://img.shields.io/badge/commits-conventional-fe5196?logo=conventionalcommits&logoColor=white)](https://www.conventionalcommits.org/)
 
-*aat* (аат; Yakutian/Sakha) = "name"
-
 ## Why aat-company?
 
 **The Problem:** The same company is written a hundred ways: `Müller & Söhne GmbH`, `MUELLER und SOEHNE G.m.b.H.`, `Müller u. Söhne`. A generic fuzzy matcher scores `Siemens AG` and `Siemens GmbH` as nearly identical, although they are two legal entities, and it scores `Hotel Adler 1` and `Hotel Adler 2` as one hotel. For KYC, CRM de-duplication, invoice matching and supplier lists, both mistakes cost money.

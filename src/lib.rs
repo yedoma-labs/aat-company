@@ -1,7 +1,5 @@
 //! # aat-company
 //!
-//! *aat* (аат; Sakha) = "name".
-//!
 //! Company name normalization and matching that knows legal forms. Business names are
 //! written a hundred ways (`Müller & Söhne GmbH`, `MUELLER und SOEHNE G.m.b.H.`), and the
 //! legal form decides *which* company it is (`Siemens AG` is not `Siemens GmbH`). Generic
