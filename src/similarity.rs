@@ -178,11 +178,13 @@ pub fn compare_parsed(a: &Company, b: &Company, cfg: &Config) -> Match {
                 && long.tokens.len() >= 2
                 && initials(&long.tokens) == short.tokens[0]
         };
-        if acronym(a, b) || acronym(b, a) {
+        let acronym_hit = acronym(a, b) || acronym(b, a);
+        if acronym_hit {
             score = score.max(0.9);
             reasons.push("one name is the acronym of the other".into());
         }
-        if ka.chars().count() < 4 && kb.chars().count() < 4 {
+        // a name under four letters is not fuzzy-matched, acronyms excepted
+        if (ka.chars().count() < 4 || kb.chars().count() < 4) && !acronym_hit {
             score = score.min(0.6);
             reasons.push("names too short to trust a fuzzy match".into());
         }
@@ -320,5 +322,14 @@ mod tests {
     #[test]
     fn short_names_are_not_fuzzy_matched() {
         assert_eq!(compare("ABC", "ABD").verdict, Verdict::Different);
+    }
+
+    #[test]
+    fn a_short_name_is_not_fuzzy_matched_against_a_longer_one() {
+        // README: "names under four letters are not fuzzy-matched"
+        let m = compare("ABC", "ABCD");
+        assert_eq!(m.verdict, Verdict::Different, "{m:?}");
+        let m = compare("ABC GmbH", "ABCD GmbH");
+        assert_eq!(m.verdict, Verdict::Different, "{m:?}");
     }
 }
