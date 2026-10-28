@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2](https://github.com/yedoma-labs/aat-company/compare/v0.1.1...v0.1.2) - 2026-10-28
+
+### Fixed
+
+- *(similarity)* do not fuzzy-match a name under four letters against a longer one ([#3](https://github.com/yedoma-labs/aat-company/pull/3))
+
+### Other
+
+- remove the Yakut name meaning
+
 ## [0.1.1](https://github.com/yedoma-labs/aat-company/compare/v0.1.0...v0.1.1) - 2026-10-27
 
 ### Added
